@@ -129,8 +129,18 @@ body.keyboard-input #hud .joystick{display:none!important}body.touch-input #hud 
 @media(prefers-reduced-motion:reduce){#upgradeScreen>.panel,#upgradeScreen .upgrade-card,#hud.prepared .core-dot{animation:none}}
 body.reduced-effects #upgradeScreen>.panel,body.reduced-effects #upgradeScreen .upgrade-card{animation:none}
 /* v12: the core button reads OVERDRIVE while channels burn; same styling, smaller label so it fits the ring. */
-#hud.locked #coreBtn b{font-size:9.5px;letter-spacing:0}
 
+/* DROSS: Combat Report v12 · Overdrive cue polish layer (Art Director, 2026-11-13)
+   Paste at the END of the last <style> block in build/dross_v12.html. */
+
+/* 1. Core button label: 9.5px fails the 12px UI minimum. Stack OVER/DRIVE at 12px (pairs with the JS string edit). */
+#hud.locked #coreBtn b{font-size:12px;line-height:1.05;letter-spacing:.02em;white-space:pre-line;text-align:center}
+
+/* 2. The burning toast should read as danger, not as a neutral info line. */
+#hud.locked #toast.show{border-left:3px solid var(--fire);background:#1e0f12e6;padding-left:10px}
+
+/* 3. Balanced wrap: no orphaned "to end it." on desktop. */
+#toast,#hud #toast{text-wrap:balance}
 </style>
 </head>
 <body>
@@ -851,7 +861,7 @@ function render(){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalAlpha=1;ctx.fillSt
 const hudCache={};function setText(id,value){if(hudCache[id]!==value){$(id).textContent=value;hudCache[id]=value;}}function setBar(id,value){const v=Math.round(clamp(value,0,1)*1000)/1000;if(hudCache[id]!==v){$(id).style.transform='scaleX('+v+')';hudCache[id]=v;}}
 
 function updateCoreHUD(){const active=G.solution>0,pure=P.core==='pure',hud=$('hud');hud.classList.toggle('swapping',G.swapPulse>0);hud.classList.toggle('reduced-motion',settings.reduced);document.body.classList.toggle('reduced-effects',settings.reduced);hud.classList.toggle('locked',P.channelsLocked);hud.classList.toggle('pure-active',pure&&!active);hud.classList.toggle('fire-active',!pure&&!active);hud.classList.toggle('sync-active',active);hud.classList.toggle('strained',P.strain>=75&&!pure&&!active);hud.classList.toggle('boss-present',!!G.boss&&!G.boss.dead);hud.style.setProperty('--ultra-color',solutionColor());hud.style.setProperty('--settled',clamp(G.coreAge/2.5,0,1));
- hud.classList.toggle('collecting',G.pickupPulse>0);hud.classList.toggle('prepared',pure&&G.purity>=purityCapacity());$('coreBtn').classList.toggle('pure-mode',pure);setText('coreBtnText',P.channelsLocked?'OVERDRIVE':pure?'PURE':'FIRE');$('coreBtn').setAttribute('aria-label',(pure?'Pure':'Blackflame')+' active. '+(P.channelsLocked?'Overdrive: power rising, health draining. ':'')+'Swap to '+(pure?'Blackflame':'Pure')+'.');
+ hud.classList.toggle('collecting',G.pickupPulse>0);hud.classList.toggle('prepared',pure&&G.purity>=purityCapacity());$('coreBtn').classList.toggle('pure-mode',pure);setText('coreBtnText',P.channelsLocked?'OVER\nDRIVE':pure?'PURE':'FIRE');$('coreBtn').setAttribute('aria-label',(pure?'Pure':'Blackflame')+' active. '+(P.channelsLocked?'Overdrive: power rising, health draining. ':'')+'Swap to '+(pure?'Blackflame':'Pure')+'.');
 }
 function updateHUD(force=false){if(!G)return;updateCoreHUD();setText('waveText',(G.waveTitle&&G.waveFlash>0?G.waveTitle:'WAVE '+G.wave)+' · '+clock(G.time)+(G.time>=540?' · BOSS':''));$('waveText').classList.toggle('swarm',G.waveFlash>0);setBar('xpBar',G.xp/G.nextXP);setText('xpLabel','LV '+G.level);
  const ready=G.charge>=100,active=G.solution>0,chip=$('analysisChip');
