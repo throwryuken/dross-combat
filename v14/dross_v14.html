@@ -203,7 +203,7 @@ body.reduced-effects #upgradeScreen>.panel,body.reduced-effects #upgradeScreen .
 <div class="share-status" id="shareStatus" role="status" aria-live="polite" hidden></div>
 <script>
 'use strict';
-// DROSS: COMBAT REPORT v14 (14.0.1) · Stances. Simulation, rendering and audio are local; music streams from music/.
+// DROSS: COMBAT REPORT v14 (14.0.2) · Stances. Simulation, rendering and audio are local; music streams from music/.
 (()=>{
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
 const SEED=(()=>{const q=new URLSearchParams(location.search).get('seed');if(q===null||q==='')return null;if(/^\d+$/.test(q))return Number(q)>>>0;let h=2166136261;for(const c of q)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;})();
@@ -211,7 +211,7 @@ const mulberry32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t
 let rng=Math.random;const reseed=()=>{if(SEED!==null)rng=mulberry32(SEED);};reseed();
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,rand=(a,b)=>a+rng()*(b-a),dist2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2,clock=t=>Math.floor(t/60).toString().padStart(2,'0')+':'+Math.floor(t%60).toString().padStart(2,'0');
 const COLORS={ink:'#090c11',stone:'#3a3d48',pure:'#b4edff',fire:'#ff8b63',dross:'#c79bff',gold:'#e7c994',hunger:'#785092',twin:'#e7c994'};
-const VERSION='14.0.1',PLAY_URL=(location.origin+location.pathname);
+const VERSION='14.0.2',PLAY_URL=(location.origin+location.pathname);
 const WORLD={w:2700,h:2300},SAVE_KEY='dross_combat_report_v1',SETTINGS_KEY='dross_settings_v1';
 const ENEMY={sword:{name:'Sword Disciple',hp:42,speed:82,r:15,color:'#ff8b63',xp:6,unlock:0,desc:'Closes the gap, then commits to a quick slash.'},striker:{name:'Striker',hp:36,speed:62,r:15,color:'#b4edff',xp:7,unlock:25,desc:'Keeps distance. A straight shot reveals its aim.'},viper:{name:'Sandviper',hp:54,speed:66,r:17,color:'#c79bff',xp:9,unlock:70,desc:'Lobs venom that leaves a temporary poison pool.'},shield:{name:'Shield Artist',hp:110,speed:48,r:18,color:'#e7c994',xp:11,unlock:115,desc:'Its front guard weakens beams. Pure madra breaks it.'},beast:{name:'Sacred Beast',hp:96,speed:70,r:22,color:'#b44942',xp:11,unlock:165,desc:'Locks a charge direction. Step sideways after the tell.'},boss:{name:'Blackflame Trial Guardian',hp:28000,speed:54,r:44,color:'#ff8b63',xp:500,unlock:600,desc:'Four techniques. Two phases. A combat model to complete.'}};
 // v13 ladder: run starts Unsouled (index 0), then Jade … Monarch. Gates use RANK.* — retune = edit here.
@@ -580,7 +580,7 @@ function addPuddle(x,y,r,life,type='poison',sourceType=type==='fire'?'boss':type
 
 function updateShots(dt){const dr=domainRadius(),field=domainActive();let heldN=0;for(const s of G.shots)if(s.held)heldN++;for(let i=G.shots.length-1;i>=0;i--){const s=G.shots[i],d=Math.hypot(P.x-s.x,P.y-s.y);s.age+=dt;let slow=1;
  if(field&&d<dr){s.exposure+=dt;slow=Math.max(.18,HOLD.slow-lv('suppression')*.05);if(G.solution>0){if(s.exposure>=.05){if(s.held){s.held=false;heldN--;}eraseShotAt(i,true);continue;}}else if(P.core==='pure'&&!s.held&&heldN<consumeCap()){s.held=true;heldN++;holdShot(s);}}
- else if(s.held){s.held=false;heldN--;}
+ else if(s.held){if(!field){s.held=false;heldN--;}else{slow=Math.max(.18,HOLD.slow-lv('suppression')*.05);}}
  s.life-=dt*(s.targeted?slow:1);s.x+=s.vx*slow*dt;s.y+=s.vy*slow*dt;const nd=Math.hypot(P.x-s.x,P.y-s.y);
  if(nd<P.r+s.r){const damage=s.damage;if(s.held){s.held=false;heldN--;G.stance.heldHits++;}effect('shatter',s.x,s.y,20,s.type==='poison'?COLORS.dross:s.color||'#ffb2a8',.28);addParticles(s.x,s.y,s.type==='poison'?COLORS.dross:'#ffcf9a',10,80);hurtPlayer(damage,s.x,s.y,s.sourceType,'shot');if(s.type==='poison')addPuddle(s.x,s.y,46,4,'poison',s.sourceType,s.lobId);release(G.shots,i,pools.shots);continue;}
  if(!s.near&&nd<45&&nd>P.r+s.r+4){const approach=(P.x-s.x)*s.vx+(P.y-s.y)*s.vy;if(approach<0){s.near=true;const caster=G.enemies.find(e=>e.id===s.source);gainAnalysis(caster?.type||(s.type==='poison'?'viper':s.type==='pure'?'striker':'boss'),2,'dodge');}}
