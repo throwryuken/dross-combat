@@ -215,12 +215,50 @@ body.reduced-effects #upgradeScreen>.panel,body.reduced-effects #upgradeScreen .
 .archive-enemy p{font-size:14px;line-height:1.5}
 }
 
-/* V6. End simulation must not overlap a HUD tap target. On a 390x844 phone the centred pause panel puts
-   #endRunBtn at y 669-719, over the joystick (y 688-804) -- a stray drag right after pausing lands on it.
-   Portrait phones: top-align the pause panel under the HUD top row and tighten the help text to 1.5 line-height. */
-@media(max-width:760px) and (min-height:700px){
+/* V6 / DCR-19 (Art Director correction of the Code Stress proposal). End simulation must not overlap or sit
+   within 8px of a HUD tap target (joystick, core/Swap, dross/Ultra, pause) and must be fully visible at
+   panel scrollTop 0 without scrolling the page. Instead of squeezing the panel above the dock, the pause
+   panel becomes a flex column and the actions move up under the heading (CSS order only, DOM and tab order
+   unchanged); the help text follows and scrolls inside the panel when it has to. Keeps 14px help text. */
+@media(max-width:760px),(max-height:500px){
+#pauseScreen .pause-panel{display:flex;flex-direction:column}
+#pauseScreen .pause-panel .actions{order:1;margin-top:16px}
+#pauseScreen .pause-controls{order:2;line-height:1.5;margin:16px 0 0}
+}
+@media(max-width:760px) and (min-height:501px){
 #pauseScreen{align-items:flex-start;padding-top:calc(var(--safe-top,0px) + 96px)}
-#pauseScreen .pause-controls{line-height:1.5;margin:12px 0}
+#pauseScreen .pause-panel{max-height:calc(100dvh - var(--safe-top,0px) - 96px - max(18px,var(--safe-bottom,0px)))}
+}
+@media(max-height:500px){
+#pauseScreen .pause-panel{max-height:calc(100dvh - 40px)}
+}
+/* :has() fallback (DCR-21 proposal). Class hooks set by renderDraft (see JS line). Separate rules on purpose:
+   a selector list that mixes :has() with a fallback is dropped whole by engines without :has(). */
+@media(min-width:761px){
+.upgrade-cards.has-mastery>.upgrade-card{padding-top:40px}
+.upgrade-cards.has-mastery>.upgrade-card .upgrade-number{top:32px}
+.upgrade-cards[data-count="1"]{grid-template-columns:minmax(0,272px);justify-content:center}
+.upgrade-cards[data-count="2"]{grid-template-columns:repeat(2,minmax(0,272px));justify-content:center}
+}
+@media(max-width:760px){
+#upgradeScreen.level-draft .upgrade-card .upgrade-connection{display:inline-block;margin:0 10px 0 0;vertical-align:baseline}
+#upgradeScreen.level-draft .upgrade-card .upgrade-foot{display:inline-block;position:static;width:auto;margin:3px 0 0;padding:0;border:0;font-size:12px;line-height:15px}
+}
+#upgradeScreen.banish-armed .upgrade-sub{color:#ffd6db;font-weight:600}
+
+/* V1 standalone (no :has() in the selector list, so engines without :has() keep the mastery padding and number offset). */
+@media(min-width:761px){
+.upgrade-card.mastery{padding-top:40px}
+.upgrade-card.mastery .upgrade-number{top:32px}
+}
+/* Fold folded / narrow phones (<=360px wide). Paste before the closing style tag, after the V6 / DCR-19 block.
+   N1. Result stats: the 2-column grid's min-content (the "Not encountered" tile) is 307px wide in a 260px box at 344px,
+       so the right column is clipped by the panel. One column below 361px.
+   N2. Level-up draft with three tall cards scrolled the overlay by 2px at 344x882 (884/882). Trim card padding 13->11px. */
+@media(max-width:360px){
+.stats-grid{grid-template-columns:minmax(0,1fr)}
+#upgradeScreen .upgrade-card{padding-top:11px;padding-bottom:11px}
+#upgradeScreen .draft-actions button{min-width:120px}
 }
 </style>
 </head>
@@ -266,7 +304,7 @@ const mulberry32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t
 let rng=Math.random;const reseed=()=>{if(SEED!==null)rng=mulberry32(SEED);};reseed();
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,rand=(a,b)=>a+rng()*(b-a),dist2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2,clock=t=>Math.floor(t/60).toString().padStart(2,'0')+':'+Math.floor(t%60).toString().padStart(2,'0');
 const COLORS={ink:'#090c11',stone:'#3a3d48',pure:'#b4edff',fire:'#ff8b63',dross:'#c79bff',gold:'#e7c994',hunger:'#785092',twin:'#e7c994'};
-const VERSION='15.0.0',PLAY_URL=(location.origin+location.pathname);
+const VERSION='15.0.1',PLAY_URL=(location.origin+location.pathname);
 const WORLD={w:2700,h:2300},SAVE_KEY='dross_combat_report_v1',SETTINGS_KEY='dross_settings_v1';
 const ENEMY={sword:{name:'Sword Disciple',hp:42,speed:82,r:15,color:'#ff8b63',xp:6,unlock:0,desc:'Closes the gap, then commits to a quick slash.'},striker:{name:'Striker',hp:36,speed:62,r:15,color:'#b4edff',xp:7,unlock:25,desc:'Keeps distance. A straight shot reveals its aim.'},viper:{name:'Sandviper',hp:54,speed:66,r:17,color:'#c79bff',xp:9,unlock:70,desc:'Lobs venom that leaves a temporary poison pool.'},shield:{name:'Shield Artist',hp:110,speed:48,r:18,color:'#e7c994',xp:11,unlock:115,desc:'Its front guard weakens beams. Pure madra breaks it.'},beast:{name:'Sacred Beast',hp:96,speed:70,r:22,color:'#b44942',xp:11,unlock:165,desc:'Locks a charge direction. Step sideways after the tell.'},boss:{name:'Blackflame Trial Guardian',hp:28000,speed:54,r:44,color:'#ff8b63',xp:500,unlock:600,desc:'Four techniques. Two phases. A combat model to complete.'}};
 // v13 ladder: run starts Unsouled (index 0), then Jade … Monarch. Gates use RANK.* — retune = edit here.
@@ -606,7 +644,7 @@ function renderDraft(){const m=G.draftMode,lvl=m==='level';
  $('upgradeLevel').textContent=m==='oath'?'LOWGOLD · SWEAR AN OATH':m==='chest'?(G.chestMajor?'MINI-GUARDIAN CHEST':'ELITE CHEST'):'MADRA LEVEL '+G.level;
  $('upgradeTitle').textContent=m==='oath'?'Choose your Oath.':m==='chest'?(G.offer[0]&&G.offer[0].evo?'Your arts evolve.':'Claim a treasure.'):'Refine your sacred arts.';
  $('upgradeSub').textContent=m==='oath'?'Your Oath adds a consume buff on top of Kindling and unlocks its Oath cards. It lasts the whole run.':m==='chest'?(G.offer[0]&&G.offer[0].evo?'Both pieces are maxed, so this chest evolves them instead of giving a treasure.':'Treasures add new mechanics. Your Oath’s treasures are offered first.'):G.banishMode?'BANISH: pick a card to remove for the rest of this run.':'Slots · '+slotLine();
- $('upgradeCards').innerHTML=G.offer.map(cardHTML).join('');
+ $('upgradeCards').innerHTML=G.offer.map(cardHTML).join('');{const uc=$('upgradeCards'),us=$('upgradeScreen');uc.dataset.count=G.offer.length;uc.classList.toggle('has-mastery',!!uc.querySelector('.mastery'));us.classList.toggle('level-draft',lvl);us.classList.toggle('banish-armed',lvl&&!!G.banishMode);}
  $('draftActions').hidden=!lvl;$('rerollBtn').textContent='Reroll · '+G.rerolls;$('rerollBtn').disabled=G.rerolls<=0;$('banishBtn').textContent=G.banishMode?'Cancel banish':'Banish · '+G.banishes;$('banishBtn').disabled=G.banishes<=0&&!G.banishMode;$('banishBtn').classList.toggle('armed',!!G.banishMode);
  $('upgradeNoteKeys').textContent=lvl?'Choose with 1, 2, or 3 · R reroll · B banish · S skip':'Choose with '+G.offer.map((_,i)=>i+1).join(', ');}
 function finishDraft(color){G.offer=[];G.draftMode=null;G.banishMode=false;state='play';showScreen(null);G.levelPulse=.55;effect('stance',P.x,P.y,135,color||COLORS.gold,.45);sound.play('charged');checkAdvancement();updateHUD(true);}
@@ -1102,7 +1140,7 @@ for(const e of G.enemies)if(!e.dead&&e.state==='tell'&&(e.type==='striker'||e.ty
 for(const e of G.enemies)if(!e.dead&&e.state==='tell'&&visible(e.x,e.y,e.r+30))drawEnemy(e,solved);
 for(const s of G.shots){if(!visible(s.x,s.y,24))continue;const suppressed=s.held,c=suppressed?'#c8f2ff':s.type==='poison'?COLORS.dross:s.type==='pure'?COLORS.pure:COLORS.fire;line(s.x-s.vx*.055,s.y-s.vy*.055,s.x,s.y,c+'40',s.r*1.35);line(s.x-s.vx*.030,s.y-s.vy*.030,s.x,s.y,c+'a0',s.r*.75);circle(s.x,s.y,s.r+2,'#0a1022',c+'a0',1);circle(s.x,s.y,s.r*.70,c);circle(s.x-1,s.y-1,Math.max(1.5,s.r*.27),'#fff6de');if(s.heavy)circle(s.x,s.y,s.r+3.5,null,'#ff8a9ae0',Math.max(1.4,2/SCALE));if(suppressed)circle(s.x,s.y,s.r+6,null,COLORS.pure,Math.max(1.8,2/SCALE));}
 drawEffects();drawCoreAura();drawPlayer();for(const p of G.particles){if(!visible(p.x,p.y,5))continue;ctx.globalAlpha=clamp(p.life/.3,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(.6,p.size*.35),p.size*.65,Math.atan2(p.vy,p.vx),0,TAU);ctx.fill();ctx.globalAlpha=1;}drawPredictions();
-for(const n of G.numbers){ctx.globalAlpha=Math.min(1,n.life*3);label(n.value,n.x,n.y,n.color,13/SCALE);ctx.globalAlpha=1;}
+{const vr=vitalsRadius(),bx=P.x,by=P.y-vr;for(const n of G.numbers){const inTags=Math.abs(n.x-bx)<100/SCALE&&n.y<by-8/SCALE&&n.y>by-70/SCALE;ctx.globalAlpha=Math.min(1,n.life*3)*(inTags?.2:1);label(n.value,n.x,n.y,n.color,13/SCALE);ctx.globalAlpha=1;}}
 if(G.advanceFlash>0){circle(P.x,P.y,(1-G.advanceFlash)*280,null,'#f6dba2'+Math.round(G.advanceFlash*170).toString(16).padStart(2,'0'),2);}
 if(G.levelPulse>0){const p=1-G.levelPulse/.75;circle(P.x,P.y,30+p*160,null,COLORS.gold+'aa',3*G.levelPulse);}
 drawVitals();ctx.restore();
