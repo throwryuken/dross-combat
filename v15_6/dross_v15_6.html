@@ -465,7 +465,7 @@ body.reduced-effects #upgradeScreen>.panel,body.reduced-effects #upgradeScreen .
 <div class="share-status" id="shareStatus" role="status" aria-live="polite" hidden></div>
 <script>
 'use strict';
-// DROSS: COMBAT REPORT v15.6 (15.6.1) · Premium art, on top of v15.5 Light (on top of the v15 upgrade revamp). Simulation, rendering and audio are local; music streams from music/.
+// DROSS: COMBAT REPORT v15.6 (15.6.2) · Premium art, on top of v15.5 Light (on top of the v15 upgrade revamp). Simulation, rendering and audio are local; music streams from music/.
 (()=>{
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
 const SEED=(()=>{const q=new URLSearchParams(location.search).get('seed');if(q===null||q==='')return null;if(/^\d+$/.test(q))return Number(q)>>>0;let h=2166136261;for(const c of q)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;})();
@@ -473,7 +473,7 @@ const mulberry32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t
 let rng=Math.random;const reseed=()=>{if(SEED!==null)rng=mulberry32(SEED);};reseed();
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,rand=(a,b)=>a+rng()*(b-a),dist2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2,clock=t=>Math.floor(t/60).toString().padStart(2,'0')+':'+Math.floor(t%60).toString().padStart(2,'0');
 const COLORS={ink:'#090c11',stone:'#3a3d48',pure:'#b4edff',fire:'#ff8b63',dross:'#c79bff',gold:'#e7c994',hunger:'#785092',twin:'#e7c994'};
-const VERSION='15.6.1',PLAY_URL=(location.origin+location.pathname);
+const VERSION='15.6.2',PLAY_URL=(location.origin+location.pathname);
 const WORLD={w:2700,h:2300},SAVE_KEY='dross_combat_report_v1',SETTINGS_KEY='dross_settings_v1';
 const ENEMY={sword:{name:'Sword Disciple',hp:42,speed:82,r:15,color:'#ff8b63',xp:6,unlock:0,desc:'Closes the gap, then commits to a quick slash.'},striker:{name:'Striker',hp:36,speed:62,r:15,color:'#b4edff',xp:7,unlock:25,desc:'Keeps distance. A straight shot reveals its aim.'},viper:{name:'Sandviper',hp:54,speed:66,r:17,color:'#c79bff',xp:9,unlock:70,desc:'Spits a fan of pink venom shots. Step through the gaps, or catch them in Pure.'},shield:{name:'Shield Artist',hp:110,speed:48,r:18,color:'#e7c994',xp:11,unlock:115,desc:'Its front guard weakens beams. Pure madra breaks it.'},beast:{name:'Sacred Beast',hp:96,speed:70,r:22,color:'#b44942',xp:11,unlock:165,desc:'Locks a charge direction. Step sideways after the tell.'},boss:{name:'Blackflame Trial Guardian',hp:28000,speed:54,r:44,color:'#ff8b63',xp:500,unlock:600,desc:'Four techniques. Two phases. A combat model to complete.'}};
 // v13 ladder: run starts Unsouled (index 0), then Jade … Monarch. Gates use RANK.* — retune = edit here.
@@ -772,7 +772,8 @@ function number(x,y,value,color='#f2e4d4'){if(!settings.numbers||G.numbers.lengt
 function gainAnalysis(type,amount,source='combat'){if(!G)return;const before=G.analysis[type];const cap=type==='boss'&&G.boss?bossModelCap():100;G.analysis[type]=Math.min(cap,before+amount*(1+lv('accelerate')*.35)*(1+(G.masteryBonus[type]||0)));const gained=G.analysis[type]-before;const chargeGain=(gained*.50+amount*(source==='lob'?.36:source==='observe'?0:.04))*(1+lv('accelerate')*.18);if(G.solution<=0&&!G.releasingSolution)gainCharge(chargeGain);if(before<100&&G.analysis[type]>=100){G.solvedThisRun[type]=true;solvedCharge(22);effect('ring',P.x,P.y,100,COLORS.dross,.8);if(type==='boss'){G.bossSolved=true;if(G.solution>0||G.releasingSolution)G.afterSolutionCharge=Math.max(100,G.afterSolutionCharge);else gainCharge(100);if(G.boss){G.boss.exposed=8;G.boss.solutionBreak=true;G.boss.state='recover';G.boss.timer=2.8*.70;effect('blast',G.boss.x,G.boss.y,150,COLORS.dross,.8);}}sound.play('ready');}if(source==='dodge'&&lv('reconstruct')&&G.nearMissCD<=0){G.nearMissCD=1;solvedCharge(6);}}
 
 const ultraChargeReq=()=>G&&G.rank>=RANK.MONARCH?60:100,ultraReady=()=>G.charge>=ultraChargeReq();
-function gainCharge(n){if(G.solution>0||G.releasingSolution)return;const chargeReq=ultraChargeReq();const before=G.charge;G.charge=Math.min(100,G.charge+n);if(before<chargeReq&&G.charge>=chargeReq){G.readyPulse=1.2;sound.play('ready');haptic('ready');}}
+const ULTRA_GAIN=0.5;
+function gainCharge(n){if(G.solution>0||G.releasingSolution)return;const chargeReq=ultraChargeReq();const before=G.charge;G.charge=Math.min(100,G.charge+n*ULTRA_GAIN);if(before<chargeReq&&G.charge>=chargeReq){G.readyPulse=1.2;sound.play('ready');haptic('ready');}}
 function domainActive(){return G.solution>0||P.core==='pure'&&P.pure>6;}
 function fireFocused(){return P.core==='fire'||G.solution>0;}
 function pureFocused(){return P.core==='pure'||G.solution>0;}
@@ -1161,7 +1162,7 @@ function clampCam(){if(!R152.camera)return;const hw=W/SCALE/2,hh=H/SCALE/2;cam.x
 const glowCache={};function glow(color){if(glowCache[color])return glowCache[color];const c=document.createElement('canvas');c.width=c.height=96;const q=c.getContext('2d'),g=q.createRadialGradient(48,48,1,48,48,47);g.addColorStop(0,color+'8c');g.addColorStop(.28,color+'3c');g.addColorStop(.6,color+'14');g.addColorStop(1,color+'00');q.fillStyle=g;q.fillRect(0,0,96,96);return glowCache[color]=c;}
 function halo(x,y,r,color,alpha=1){if(settings.reduced)return;const previous=ctx.globalAlpha;ctx.globalAlpha=previous*alpha;ctx.drawImage(glow(color),x-r,y-r,r*2,r*2);ctx.globalAlpha=previous;}
 // v15.6 premium art (visuals only). Sizes are logical px. Atlas baked at 2x. No live shadowBlur.
-const PRE_SIZE={body:[40,40],cloak:[64,40],playerCap:[96,64],kite:[26,36],bullet:[18,18],held:[12,12],ring:120,beam:[64,12],beamCore:4,beamMax:12,emberCapBeam:12,emberCap:40,lightPool:320,array:1024,tile:128};
+const PRE_SIZE={body:[40,40],cloak:[64,40],playerCap:[96,64],kite:[26,36],bullet:[18,18],held:[28,28],ring:120,beam:[64,28],beamCore:6,beamMax:26,emberCapBeam:12,emberCap:40,lightPool:320,array:1024,tile:128};
 const PRE={slabAbyss:'#09090F',slab:'#18171D',slabHi:'#211F24',seamGold:'#3A3024',arrayGold:'#C9A46A',lightPool:'#664232',cloakBlack:'#0D0B16',cloakCrimson:'#630F22',cloakCrimsonHi:'#7D1E34',rim:'#A68A7E',violet:'#6B4179',violetHi:'#A788B4',eye:'#ECEBF0',obsidian:'#140A0E',molten:'#CF8467',moltenDeep:'#985D44',moltenHot:'#FFBF88',bulletCore:'#FEEEF7',bulletPink:'#F44683',bulletPinkDeep:'#E53D76',bulletRim:'#A31E4E',pureGold:'#E8CF8E',pureCore:'#FFF6DE',flameCore:'#120A0C',flameEdge:'#A54533',flameHot:'#D89F82',ember:'#EB9978',lacquer:'#080C14',textBuff:'#E4D4BD'};
 const PRE_Q=new URLSearchParams(location.search);
 let emberAddOn=PRE_Q.get('emberAdd')!=='0',emberAddLocked=false,emberSlow=0,preLastT=0,preAtlas=null,preEmbers=[],preFloor=null;
@@ -1237,44 +1238,59 @@ function preBuildAtlas(){
     q.fillStyle=PRE.bulletPink;q.beginPath();q.arc(0,0,5.8,0,TAU);q.fill();
     q.fillStyle=PRE.bulletCore;q.beginPath();q.arc(-0.4,-0.4,4.2,0,TAU);q.fill();
   });
-  // Held 12x12 gold diamond + 2 twinkle.
+  // Held 32x32 gold diamond + baked gold halo (drawn 28x28). Hitbox/orbit unchanged.
   function heldDraw(q,tw){
-    q.translate(6,6);
-    const s=5.2+tw,d=[[0,-s],[s,0],[0,s],[-s,0]];
-    preFill(q,d,PRE.pureGold,PRE.slabAbyss,1);
-    preFill(q,[[0,-s*.45],[s*.45,0],[0,s*.45],[-s*.45,0]],PRE.pureCore,null,0);
+    q.translate(16,16);
+    const g=q.createRadialGradient(0,0,3,0,0,15.5);
+    g.addColorStop(0,'rgba(255,246,222,0.70)');
+    g.addColorStop(.28,'rgba(232,207,142,0.48)');
+    g.addColorStop(.62,'rgba(201,164,106,0.18)');
+    g.addColorStop(1,'rgba(201,164,106,0)');
+    q.fillStyle=g;q.beginPath();q.arc(0,0,15.5,0,TAU);q.fill();
+    const s=9.4+tw,d=[[0,-s],[s,0],[0,s],[-s,0]];
+    preFill(q,d,PRE.pureGold,PRE.pureCore,1.3);
+    preFill(q,[[0,-s*.5],[s*.5,0],[0,s*.5],[-s*.5,0]],'#FFF6DE',null,0);
   }
-  A.held=preBake(12,12,q=>heldDraw(q,0));
-  A.heldTw=[preBake(12,12,q=>heldDraw(q,.3)),preBake(12,12,q=>heldDraw(q,-.15))];
+  A.held=preBake(32,32,q=>heldDraw(q,0));
+  A.heldTw=[preBake(32,32,q=>heldDraw(q,.45)),preBake(32,32,q=>heldDraw(q,-.25))];
   // Pure ring baked at 120px; drawn scaled to the live orbit diameter (orbit is gameplay).
   A.ring=preBake(128,128,q=>{
     q.translate(64,64);
     q.strokeStyle=PRE.pureGold+'26';q.lineWidth=4;q.beginPath();q.arc(0,0,61,0,TAU);q.stroke();
     q.strokeStyle=PRE.pureGold+'b3';q.lineWidth=2;q.beginPath();q.arc(0,0,60,0,TAU);q.stroke();
   });
-  // Beam strip 64x12, 4 frames. 4px core, 1px flame-hot, licks to 12.
+  // Beam strip 64x32, 4 frames. 6px #120A0C core, crimson/orange molten edge, baked glow. Visual ~26px. Not enemy pink.
   A.beam=[];A.beamCap=[];A.beamHit=[];
   for(let f=0;f<4;f++){
     const t=f/4*TAU;
-    A.beam.push(preBake(64,12,q=>{
+    A.beam.push(preBake(64,32,q=>{
       for(let x=0;x<64;x++){
-        const lick=Math.sin(x*.4+t)*2+Math.sin(x*.15+t*2)*1.2;
-        const half=Math.min(6,2+Math.abs(lick)*.5+1);
-        q.fillStyle=PRE.flameEdge;q.fillRect(x,6-half,1,half*2);
-        q.fillStyle=PRE.flameHot;q.fillRect(x,6-2.5,1,5);
-        q.fillStyle=PRE.flameCore;q.fillRect(x,4,1,4);
+        const lick=Math.sin(x*.35+t)*3.2+Math.sin(x*.12+t*2)*1.6;
+        const mid=16,glow=Math.min(16,11+Math.abs(lick)*.7),edge=8+Math.abs(lick)*.3;
+        q.fillStyle='rgba(124,36,24,0.20)';q.fillRect(x,mid-glow,1,glow*2);
+        q.fillStyle='rgba(201,90,36,0.32)';q.fillRect(x,mid-glow*.72,1,glow*1.44);
+        q.fillStyle='#C94A2A';q.fillRect(x,mid-edge,1,edge*2);
+        q.fillStyle='#FF8A3D';q.fillRect(x,mid-6.5,1,13);
+        q.fillStyle='#FFBF88';q.fillRect(x,mid-4.5,1,9);
+        q.fillStyle=PRE.flameCore;q.fillRect(x,mid-3,1,6);
       }
     }));
-    A.beamCap.push(preBake(16,16,q=>{
-      q.translate(8,8);
-      q.fillStyle=PRE.flameEdge;q.beginPath();q.arc(0,0,6+Math.sin(t),0,TAU);q.fill();
-      q.fillStyle=PRE.flameCore;q.beginPath();q.arc(0,0,3,0,TAU);q.fill();
+    A.beamCap.push(preBake(36,36,q=>{
+      q.translate(18,18);
+      const g=q.createRadialGradient(0,0,2,0,0,17);
+      g.addColorStop(0,'rgba(18,10,12,0.9)');g.addColorStop(.35,'rgba(255,138,61,0.55)');g.addColorStop(.7,'rgba(201,74,42,0.28)');g.addColorStop(1,'rgba(124,36,24,0)');
+      q.fillStyle=g;q.beginPath();q.arc(0,0,17,0,TAU);q.fill();
+      q.fillStyle='#C94A2A';q.beginPath();q.arc(0,0,8+Math.sin(t),0,TAU);q.fill();
+      q.fillStyle=PRE.flameCore;q.beginPath();q.arc(0,0,3.5,0,TAU);q.fill();
     }));
-    A.beamHit.push(preBake(24,24,q=>{
-      q.translate(12,12);
-      q.strokeStyle=PRE.flameEdge;q.lineWidth=1.2;
-      for(let i=0;i<6;i++){const a=i*TAU/6+t*.2,r=5+i%2*4;q.beginPath();q.moveTo(Math.cos(a)*3,Math.sin(a)*3);q.lineTo(Math.cos(a)*r,Math.sin(a)*r);q.stroke();}
-      q.fillStyle=PRE.flameCore;q.beginPath();q.arc(0,0,3,0,TAU);q.fill();
+    A.beamHit.push(preBake(40,40,q=>{
+      q.translate(20,20);
+      const g=q.createRadialGradient(0,0,2,0,0,19);
+      g.addColorStop(0,'rgba(255,191,136,0.5)');g.addColorStop(.5,'rgba(201,74,42,0.28)');g.addColorStop(1,'rgba(124,36,24,0)');
+      q.fillStyle=g;q.beginPath();q.arc(0,0,19,0,TAU);q.fill();
+      q.strokeStyle='#FF8A3D';q.lineWidth=1.6;
+      for(let i=0;i<6;i++){const a=i*TAU/6+t*.2,r=7+i%2*6;q.beginPath();q.moveTo(Math.cos(a)*3,Math.sin(a)*3);q.lineTo(Math.cos(a)*r,Math.sin(a)*r);q.stroke();}
+      q.fillStyle=PRE.flameCore;q.beginPath();q.arc(0,0,3.5,0,TAU);q.fill();
     }));
   }
   A.ember2=preBake(2,2,q=>{q.fillStyle=PRE.ember;q.fillRect(0,0,2,2);});
@@ -1466,7 +1482,7 @@ function drawPremiumShots(){
     if(!visible(s.x,s.y,30))continue;
     if(s.held){
       const tw=Math.floor((G.visualTime||0)*8)%3,img=tw===0?preAtlas.heldTw[0]:tw===2?preAtlas.heldTw[1]:preAtlas.held;
-      preBlit(img,s.x,s.y,12,12,Math.atan2(s.vy||0,s.vx||1)+Math.PI/4);
+      preBlit(img,s.x,s.y,PRE_SIZE.held[0],PRE_SIZE.held[1],Math.atan2(s.vy||0,s.vx||1)+Math.PI/4);
       continue;
     }
     preBlit(pulse?preAtlas.bullet2:preAtlas.bullet,s.x,s.y,18,18,Math.atan2(s.vy,s.vx));
@@ -1477,11 +1493,12 @@ function drawPremiumBeam(e){
   if(!preAtlas)preBuildAtlas();
   const angle=Math.atan2(e.y2-e.y,e.x2-e.x),len=Math.hypot(e.x2-e.x,e.y2-e.y);
   const fr=Math.floor((G.visualTime||0)*15)%4,seg=PRE_SIZE.beam[0],visW=PRE_SIZE.beamMax;
+  const strip=preAtlas.beam[fr],cap=preAtlas.beamCap[fr],hit=preAtlas.beamHit[fr];
   ctx.save();ctx.translate(e.x,e.y);ctx.rotate(angle);
   const n=Math.max(1,Math.ceil(len/seg));
-  for(let i=0;i<n;i++){const x=i*seg,w=Math.min(seg,len-x);if(w<=0)break;ctx.drawImage(preAtlas.beam[fr],0,0,Math.max(1,w*2),24,x,-visW/2,w,visW);}
-  ctx.drawImage(preAtlas.beamCap[fr],-8,-8,16,16);
-  ctx.drawImage(preAtlas.beamHit[fr],len-12,-12,24,24);
+  for(let i=0;i<n;i++){const x=i*seg,w=Math.min(seg,len-x);if(w<=0)break;ctx.drawImage(strip,0,0,Math.max(1,w*(strip.width/seg)),strip.height,x,-visW/2,w,visW);}
+  ctx.drawImage(cap,-18,-18,36,36);
+  ctx.drawImage(hit,len-20,-20,40,40);
   ctx.restore();
 }
 
