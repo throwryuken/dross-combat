@@ -465,7 +465,7 @@ body.reduced-effects #upgradeScreen>.panel,body.reduced-effects #upgradeScreen .
 <div class="share-status" id="shareStatus" role="status" aria-live="polite" hidden></div>
 <script>
 'use strict';
-// DROSS: COMBAT REPORT v15.6 (15.6.0) · Premium art, on top of v15.5 Light (on top of the v15 upgrade revamp). Simulation, rendering and audio are local; music streams from music/.
+// DROSS: COMBAT REPORT v15.6 (15.6.1) · Premium art, on top of v15.5 Light (on top of the v15 upgrade revamp). Simulation, rendering and audio are local; music streams from music/.
 (()=>{
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d',{alpha:false});
 const SEED=(()=>{const q=new URLSearchParams(location.search).get('seed');if(q===null||q==='')return null;if(/^\d+$/.test(q))return Number(q)>>>0;let h=2166136261;for(const c of q)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;})();
@@ -473,7 +473,7 @@ const mulberry32=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t
 let rng=Math.random;const reseed=()=>{if(SEED!==null)rng=mulberry32(SEED);};reseed();
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,rand=(a,b)=>a+rng()*(b-a),dist2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2,clock=t=>Math.floor(t/60).toString().padStart(2,'0')+':'+Math.floor(t%60).toString().padStart(2,'0');
 const COLORS={ink:'#090c11',stone:'#3a3d48',pure:'#b4edff',fire:'#ff8b63',dross:'#c79bff',gold:'#e7c994',hunger:'#785092',twin:'#e7c994'};
-const VERSION='15.6.0',PLAY_URL=(location.origin+location.pathname);
+const VERSION='15.6.1',PLAY_URL=(location.origin+location.pathname);
 const WORLD={w:2700,h:2300},SAVE_KEY='dross_combat_report_v1',SETTINGS_KEY='dross_settings_v1';
 const ENEMY={sword:{name:'Sword Disciple',hp:42,speed:82,r:15,color:'#ff8b63',xp:6,unlock:0,desc:'Closes the gap, then commits to a quick slash.'},striker:{name:'Striker',hp:36,speed:62,r:15,color:'#b4edff',xp:7,unlock:25,desc:'Keeps distance. A straight shot reveals its aim.'},viper:{name:'Sandviper',hp:54,speed:66,r:17,color:'#c79bff',xp:9,unlock:70,desc:'Spits a fan of pink venom shots. Step through the gaps, or catch them in Pure.'},shield:{name:'Shield Artist',hp:110,speed:48,r:18,color:'#e7c994',xp:11,unlock:115,desc:'Its front guard weakens beams. Pure madra breaks it.'},beast:{name:'Sacred Beast',hp:96,speed:70,r:22,color:'#b44942',xp:11,unlock:165,desc:'Locks a charge direction. Step sideways after the tell.'},boss:{name:'Blackflame Trial Guardian',hp:28000,speed:54,r:44,color:'#ff8b63',xp:500,unlock:600,desc:'Four techniques. Two phases. A combat model to complete.'}};
 // v13 ladder: run starts Unsouled (index 0), then Jade … Monarch. Gates use RANK.* — retune = edit here.
@@ -532,7 +532,7 @@ const take=(pool,data)=>Object.assign(pool.pop()||{},data),release=(arr,i,pool)=
 const allScreens=['menu','upgradeScreen','advanceScreen','pauseScreen','settingsScreen','archiveScreen','resultScreen','helpScreen','copyScreen'];
 function showScreen(id){if(id){toastTime=bannerTime=0;$('toast').classList.remove('show');$('solutionBanner').classList.remove('show');}for(const s of allScreens)$(s).hidden=s!==id;if(!id&&document.activeElement&&document.activeElement!==document.body)document.activeElement.blur();$('hud').hidden=!G||state!=='play';}
 function clearInput(){keys.clear();joy.id=null;joy.x=joy.y=0;input.x=input.y=0;ultraHold=false;if(G)G.ultraPending=false;if(typeof stopBeamUltra==='function'&&G&&G.beamOn)stopBeamUltra();$('joyKnob').style.transform='translate(0,0)';}
-function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,settings.reduced?1.4:2);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);SCALE=clamp(Math.min(W/1120,H/720),.68,1.2);if(W>H&&H<560)SCALE=.70;document.documentElement.style.setProperty('--control',settings.control/100);}
+function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,settings.reduced?1.4:1.75);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);SCALE=clamp(Math.min(W/1120,H/720),.68,1.2);if(W>H&&H<560)SCALE=.70;document.documentElement.style.setProperty('--control',settings.control/100);}
 addEventListener('resize',()=>{resize();if(joy.id!==null){const r=$('joystick').getBoundingClientRect();if(r.width){joy.cx=r.left+r.width/2;joy.cy=r.top+r.height/2;joy.max=r.width*.33;}}else keys.clear();});resize();
 addEventListener('keydown',e=>{if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))document.body.classList.add('keyboard-input');});
 addEventListener('pointerdown',e=>{if(e.pointerType==='touch'){document.body.classList.remove('keyboard-input');document.body.classList.add('touch-input');}});
@@ -1339,16 +1339,45 @@ function preBuildAtlas(){
   preAtlas=A;
 }
 
-function preTilePattern(){
-  if(preAtlas.tilePat)return preAtlas.tilePat;
+function preTileSheet(){
+  if(preAtlas.tileSheet)return preAtlas.tileSheet;
   const c=document.createElement('canvas');c.width=c.height=512;
   const q=c.getContext('2d');
   for(let ty=0;ty<4;ty++)for(let tx=0;tx<4;tx++){
     const v=(tx+ty*3)%4;
     q.drawImage(preAtlas.tiles[v],tx*128,ty*128,128,128);
   }
-  preAtlas.tilePat=ctx.createPattern(c,'repeat');
-  return preAtlas.tilePat;
+  preAtlas.tileSheet=c;
+  return c;
+}
+function preTilePattern(dest){
+  dest=dest||ctx;
+  if(dest===ctx&&preAtlas.tilePat)return preAtlas.tilePat;
+  const pat=dest.createPattern(preTileSheet(),'repeat');
+  if(dest===ctx)preAtlas.tilePat=pat;
+  return pat;
+}
+const PRE_TILE=128;
+function preFloorDirty(){
+  if(!preFloor)return true;
+  return preFloor.tx!==Math.floor(cam.x/PRE_TILE)||preFloor.ty!==Math.floor(cam.y/PRE_TILE)||preFloor.dpr!==DPR||preFloor.scale!==SCALE||preFloor.vw!==W||preFloor.vh!==H;
+}
+function preRebuildFloor(){
+  const pad=PRE_TILE,halfW=W/SCALE/2,halfH=H/SCALE/2,worldW=halfW*2+pad*2,worldH=halfH*2+pad*2;
+  const originX=cam.x-worldW/2,originY=cam.y-worldH/2,s=DPR*SCALE;
+  const cw=Math.max(1,Math.ceil(worldW*s)),ch=Math.max(1,Math.ceil(worldH*s));
+  let c=preFloor&&preFloor.c;
+  if(!c||c.width!==cw||c.height!==ch){c=document.createElement('canvas');c.width=cw;c.height=ch;}
+  const q=c.getContext('2d');
+  q.setTransform(s,0,0,s,0,0);
+  q.fillStyle=PRE.slabAbyss;q.fillRect(0,0,worldW,worldH);
+  q.save();q.translate(-originX,-originY);
+  q.beginPath();q.rect(0,0,WORLD.w,WORLD.h);q.clip();
+  q.fillStyle=preTilePattern(q);q.fillRect(originX,originY,worldW,worldH);
+  q.drawImage(preAtlas.array,WORLD.w/2-700,WORLD.h/2-700,1400,1400);
+  q.restore();
+  if(G&&P){q.save();q.translate(-originX,-originY);q.drawImage(preAtlas.pool,P.x-PRE_SIZE.lightPool/2,P.y-PRE_SIZE.lightPool/2,PRE_SIZE.lightPool,PRE_SIZE.lightPool);q.restore();}
+  preFloor={c,tx:Math.floor(cam.x/PRE_TILE),ty:Math.floor(cam.y/PRE_TILE),originX,originY,worldW,worldH,dpr:DPR,scale:SCALE,vw:W,vh:H};
 }
 
 function preTickEmberAdd(now){
@@ -1371,12 +1400,10 @@ function tickPremium(dt){
 
 function drawPremiumArena(){
   if(!preAtlas)preBuildAtlas();
-  const halfW=W/SCALE/2,halfH=H/SCALE/2,cx=WORLD.w/2,cy=WORLD.h/2;
-  ctx.fillStyle=PRE.slabAbyss;ctx.fillRect(cam.x-halfW-30,cam.y-halfH-30,halfW*2+60,halfH*2+60);
+  if(preFloorDirty())preRebuildFloor();
+  ctx.drawImage(preFloor.c,preFloor.originX,preFloor.originY,preFloor.worldW,preFloor.worldH);
+  const cx=WORLD.w/2,cy=WORLD.h/2;
   ctx.save();ctx.beginPath();ctx.rect(0,0,WORLD.w,WORLD.h);ctx.clip();
-  ctx.fillStyle=preTilePattern();ctx.fillRect(cam.x-halfW-30,cam.y-halfH-30,halfW*2+60,halfH*2+60);
-  // formation array, centred, not at full-strength gold
-  ctx.drawImage(preAtlas.array,cx-700,cy-700,1400,1400);
   const props=G?.geometry||menuProps;let shown=0;
   for(const p of props){
     if(shown>=6)break;
@@ -1389,7 +1416,6 @@ function drawPremiumArena(){
   }
   ctx.restore();
   drawWalls();
-  if(G&&P)ctx.drawImage(preAtlas.pool,P.x-PRE_SIZE.lightPool/2,P.y-PRE_SIZE.lightPool/2,PRE_SIZE.lightPool,PRE_SIZE.lightPool);
 }
 
 function drawPremiumPlayer(){
